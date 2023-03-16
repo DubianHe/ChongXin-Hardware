@@ -1,0 +1,13 @@
+"STARTUP.obj",
+"lcd12864.obj",
+"ds1302.obj",
+"main.obj",
+"word.obj",
+"lunar_calendar.obj",
+"keyscan.obj",
+"myutils.obj",
+"dth11.obj",
+"mp3.obj",
+"yanwubaojing.obj" 
+TO "ÖØÐ´" 
+RAMSIZE(256) 

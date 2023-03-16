@@ -1,0 +1,102 @@
+C51 COMPILER V9.01   DTH11                                                                 11/04/2022 20:44:02 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE DTH11
+OBJECT MODULE PLACED IN dth11.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE dth11.c COMPACT OPTIMIZE(9,SPEED) BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include <dth11.h>//头文件
+   2          
+   3          //写时序的函数
+   4          void DHT11_delay_us(uchar n)
+   5          {
+   6   1          while (--n);
+   7   1      }
+   8          
+   9          void DHT11_delay_ms(uint z)
+  10          {
+  11   1          uint i, j;
+  12   1          for (i = z; i > 0; i--)
+  13   1              for (j = 110; j > 0; j--);
+  14   1      }
+  15          
+  16          /*------------------------------------------------
+  17                        DHT11开始信号
+  18          ------------------------------------------------*/
+  19          void DHT11_start() {
+  20   1              Data = 1;
+  21   1              DHT11_delay_us(2);
+  22   1              Data = 0;
+  23   1              DHT11_delay_ms(20);   //延时18ms以上
+  24   1              Data = 1;
+  25   1              DHT11_delay_us(30);
+  26   1      }
+  27          
+  28          /*------------------------------------------------
+  29                        接收八位二进制
+  30          ------------------------------------------------*/
+  31          uchar DHT11_rec_byte()
+  32          {
+  33   1          uchar i, dat = 0;
+  34   1          for (i = 0; i < 8; i++)
+  35   1          {
+  36   2              while (!Data);
+  37   2              DHT11_delay_us(8);
+  38   2              dat <<= 1;
+  39   2              if (Data == 1)
+  40   2                  dat += 1;
+  41   2              while (Data);
+  42   2          }
+  43   1          return dat;
+  44   1      }
+  45          
+  46          /*------------------------------------------------
+  47                        接收40bit数据
+  48          ------------------------------------------------*/
+  49          void getdata(uchar *sensordata) {    //接收40位的数据
+  50   1              uchar R_H, R_L, T_H, T_L, RH, RL, TH, TL, revise;
+  51   1              DHT11_start();
+  52   1      
+  53   1              if (Data == 0) {
+  54   2      
+  55   2                      while (Data == 0); //等待拉高
+C51 COMPILER V9.01   DTH11                                                                 11/04/2022 20:44:02 PAGE 2   
+
+  56   2      
+  57   2                      DHT11_delay_us(40);  //拉高后延时80us
+  58   2                      R_H = DHT11_rec_byte();  //接收湿度高八位
+  59   2                      R_L = DHT11_rec_byte();  //接收湿度低八位
+  60   2                      T_H = DHT11_rec_byte();  //接收温度高八位
+  61   2                      T_L = DHT11_rec_byte();  //接收温度低八位
+  62   2                      revise = DHT11_rec_byte(); //接收校正位
+  63   2      
+  64   2                      DHT11_delay_us(25);    //结束
+  65   2      
+  66   2                      if ((R_H + R_L + T_H + T_L) == revise) { //校正
+  67   3                          RH = R_H;
+  68   3                  RL = R_L;
+  69   3                  TH = T_H;
+  70   3                  TL = T_L;   
+  71   3                      } 
+  72   2                      sensordata[0] = RH;
+  73   2                      sensordata[1] = TH;
+  74   2      
+  75   2              }
+  76   1      }
+  77          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    207    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----       9
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

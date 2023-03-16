@@ -1,0 +1,65 @@
+C51 COMPILER V9.01   MP3                                                                   11/04/2022 20:44:02 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MP3
+OBJECT MODULE PLACED IN mp3.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE mp3.c COMPACT OPTIMIZE(9,SPEED) BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "mp3.h"
+   2          void Delay1us ( uint T )//延时函数
+   3          {
+   4   1          while ( T-- );
+   5   1      }
+   6          void Send ( uchar addr )//发送函数。
+   7          {
+   8   1          uchar i;
+   9   1      
+  10   1          EA = 0;/*发送时关掉中断，防止中断影响时序  */
+  11   1      
+  12   1          sda = 1;/*开始拉高  */
+  13   1          Delay1us ( 1000 );
+  14   1          sda = 0;/*开始引导码*/
+  15   1          Delay1us ( 2200 );/*此处延时最少要大于2ms，此参数延时为310ms  */
+  16   1      
+  17   1          for ( i = 0; i < 8; i++ ) /*总共8位数据  */
+  18   1          {
+  19   2              sda = 1;
+  20   2              if ( addr & 0x01 ) /*3:1表示数据位1,每个位用两个脉冲表示  */
+  21   2              {
+  22   3                  Delay1us ( 500 );
+  23   3                  sda = 0;
+  24   3                  Delay1us ( 210 );
+  25   3              }
+  26   2              else              /*1：3表示数据位0 ,每个位用两个脉冲表示  */
+  27   2              {
+  28   3                  Delay1us ( 210 );
+  29   3                  sda = 0;
+  30   3                  Delay1us ( 500 );
+  31   3              }
+  32   2              addr >>= 1;
+  33   2          }
+  34   1          sda = 1;
+  35   1          EA = 1;//恢复中断
+  36   1      }
+  37          void playmusic(uchar num)
+  38          {       Send(0x0a);
+  39   1              Send(num);
+  40   1              Send(0x0b);
+  41   1      }
+  42           
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    103    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

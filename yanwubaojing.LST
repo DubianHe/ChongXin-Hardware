@@ -1,0 +1,41 @@
+C51 COMPILER V9.01   YANWUBAOJING                                                          11/04/2022 20:44:02 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE YANWUBAOJING
+OBJECT MODULE PLACED IN yanwubaojing.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE yanwubaojing.c COMPACT OPTIMIZE(9,SPEED) BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "yanwubaojing.h"
+   2          void delayyanwu()
+   3          {       uchar m,n,s;
+   4   1              for(m=20;m>0;m--)
+   5   1              for(n=20;n>0;n--)
+   6   1              for(s=248;s>0;s--);
+   7   1      }
+   8          uchar yanwujiance()
+   9          {       uchar i=0;
+  10   1              if(yanwu==0)
+  11   1              {       delayyanwu();
+  12   2                      if(yanwu==0)
+  13   2                      {       i=1;
+  14   3                      }
+  15   2              }
+  16   1              return i;
+  17   1      
+  18   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     28    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

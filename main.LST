@@ -1,0 +1,571 @@
+C51 COMPILER V9.01   MAIN                                                                  11/04/2022 20:44:02 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c COMPACT OPTIMIZE(9,SPEED) BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "main.h"
+   2          TIME time,tmp_time;
+   3          ALARM alarm={10,10};//闹钟时间
+   4          uchar mod=0;
+   5          uchar lunar[2];
+   6          uchar clock=1;
+   7          uchar music=1;
+   8          Sensor sensor;
+   9          uchar ampm=1;
+  10          uchar breakflag=1;
+  11          uchar UART_buff;
+  12          uchar tianqi=1;
+  13          uchar huozai=0;
+  14          uchar weatherdata[]="Cloudy  ";
+  15          uchar count=0;
+  16          uchar mynum=0;
+  17          
+  18          /*
+  19          模式0是万年历的主界面 其中包括静态框架和变量功能
+  20          */
+  21          void sendData(uchar *datas);
+  22          void mod0kuangjia()
+  23          {       
+  24   1              LCD12864_Writechar("温",2,0);
+  25   1              LCD12864_Writechar("湿",2,4);
+  26   1              LCD12864_Writechar("度",2,2);
+  27   1              LCD12864_Writechar("%",2,6);
+  28   1              LCD12864_Writestring(weather,tianqi*2,2,7);     
+  29   1      }
+  30          void mod0time()
+  31          {       uchar keyval;
+  32   1              keyval=Key();
+  33   1              huozai=yanwujiance();
+  34   1              if(huozai==1)
+  35   1              {       LCD12864_WriteCmd(0x01);
+  36   2                      mod=4;
+  37   2                      
+  38   2              }
+  39   1              if(ampm==1){
+  40   2              if (time.hour>12)
+  41   2              LCD12864_Writechar("PM",1,4);
+  42   2              else
+  43   2              LCD12864_Writechar("AM",1,4);}
+  44   1              else
+  45   1              LCD12864_Writechar("  ",1,4);
+  46   1              if(clock==1)
+  47   1                      {LCD12864_Writechar("闹钟",0,6);
+  48   2                      if(time.min==alarm.min&&time.hour==alarm.hour)
+  49   2                      {mod=4;
+  50   3                      LCD12864_WriteCmd(0x01);}}
+  51   1              else
+  52   1                      LCD12864_Writechar("    ",0,6);
+  53   1              
+  54   1              read_time((uchar *)&time);
+  55   1              turninto(&time,ampm);
+C51 COMPILER V9.01   MAIN                                                                  11/04/2022 20:44:02 PAGE 2   
+
+  56   1              LCD12864_Writechar(time.date,0,0);
+  57   1              LCD12864_Writechar(time.times,1,0);
+  58   1              turn_lunar_calendar(&time, lunar);
+  59   1              LCD12864_LUNAR(lunar[0],lunar[1]);
+  60   1              LCD12864_Writestring(nongliyear,(time.year%10)*2,3,0);
+  61   1              LCD12864_Writestring(nongliyear,((2000+time.year)%12)*2+20,3,1);
+  62   1              LCD12864_Writestring(jieqis,jieqixuhao(&time)*4,3,6);
+  63   1              LCD12864_Writestring(jieqis,jieqixuhao(&time)*4+2,3,7);
+  64   1              LCD12864_TIME(sensor.shidu,2,1);
+  65   1              LCD12864_TIME(sensor.wendu,2,5);
+  66   1      
+  67   1      
+  68   1              if(mod!=0)
+  69   1              {
+  70   2              LCD12864_WriteCmd(0x01);
+  71   2              }
+  72   1              if(keyval==1)
+  73   1              {LCD12864_WriteCmd(0x01);       
+  74   2              mod=5;
+  75   2      
+  76   2              }
+  77   1              }
+  78          void mod0()
+  79          {       mod0kuangjia();
+  80   1              mod0time();
+  81   1              }
+  82          
+  83          /*
+  84          模式1是闹钟界面
+  85          */
+  86          void mod1kuangjia()
+  87          {       uchar key_val;
+  88   1              uchar states=1;
+  89   1              LCD12864_Writechar("闹钟",0,3);
+  90   1              LCD12864_TIME(alarm.hour,1,2);
+  91   1              LCD12864_TIME(alarm.min,1,5);
+  92   1              LCD12864_Writechar(" :: ",1,3);
+  93   1              LCD12864_Writechar("音乐",2,3);
+  94   1              while(1)
+  95   1              {       key_val=Key();
+  96   2                      LCD12864_TIME(alarm.hour,1,2);
+  97   2                      LCD12864_TIME(alarm.min,1,5);
+  98   2                      if(clock==0)
+  99   2                              LCD12864_Writechar("关",0,7);
+ 100   2                      else if(clock==1)
+ 101   2                              LCD12864_Writechar("开",0,7);
+ 102   2                      if(music==1)
+ 103   2                      LCD12864_Writechar("爱你",3,3);
+ 104   2                      else if(music==2)
+ 105   2                      LCD12864_Writechar("她说",3,3);
+ 106   2                      switch(states)
+ 107   2                      {       case 1:{LCD12864_Writestring(shijian,2,1,7);LCD12864_Writechar("  ",2,5);break;}
+ 108   3                              case 2:LCD12864_Writestring(shijian,4,1,7);break;
+ 109   3                              case 3:LCD12864_Writechar("->",0,5);break;
+ 110   3                              case 4:{LCD12864_Writechar("<-",2,5);LCD12864_Writechar("  ",0,5);break;}
+ 111   3                      }
+ 112   2                      if(key_val==2)
+ 113   2                      {       if (states>=4)
+ 114   3                                      states=1;
+ 115   3                              else states++;
+ 116   3                      }
+ 117   2                      else if(key_val==3||key_val==4)
+C51 COMPILER V9.01   MAIN                                                                  11/04/2022 20:44:02 PAGE 3   
+
+ 118   2                      {       if(states==1)
+ 119   3                              {       if(key_val==3)
+ 120   4                                      alarm.min++;
+ 121   4                                      else
+ 122   4                                      alarm.min--;
+ 123   4                                      if(alarm.min<0)
+ 124   4                                              alarm.min=59;
+ 125   4                                      else if(alarm.min>59)
+ 126   4                                              alarm.min=0;
+ 127   4                                      LCD12864_TIME(alarm.min,1,5);
+ 128   4                              }
+ 129   3                              else if(states==2)
+ 130   3                              {       if(key_val==3)
+ 131   4                                      alarm.hour++;
+ 132   4                                      else
+ 133   4                                      alarm.hour--;
+ 134   4                                      if(alarm.hour<0)
+ 135   4                                              time.hour=23;
+ 136   4                                      else if(alarm.hour>23)
+ 137   4                                              alarm.hour=0;
+ 138   4                                      
+ 139   4                                      LCD12864_TIME(alarm.hour,1,2);
+ 140   4                              }
+ 141   3                              else if(states==3)
+ 142   3                              {       if(clock==0)
+ 143   4                                              clock=1;
+ 144   4                                      else
+ 145   4                                      clock=0;
+ 146   4                                      if(clock==0)
+ 147   4                                              LCD12864_Writechar("关",0,7);
+ 148   4                                      else if(clock==1)
+ 149   4                                              LCD12864_Writechar("开",0,7);}
+ 150   3                              else if(states==4)
+ 151   3                              {       if (music==1)
+ 152   4                                              music=2;
+ 153   4                                      else
+ 154   4                                              music=1;
+ 155   4                                      }
+ 156   3                              
+ 157   3                      }
+ 158   2                      else if(key_val==1)
+ 159   2                      {       mod=5;
+ 160   3                              LCD12864_WriteCmd(0x01);
+ 161   3                              break;
+ 162   3                      }
+ 163   2                      if(mod!=1)
+ 164   2                      {       LCD12864_WriteCmd(0x01);
+ 165   3                              break;  
+ 166   3                      }
+ 167   2              }
+ 168   1      }
+ 169          void mod1()
+ 170          {       
+ 171   1              mod1kuangjia();
+ 172   1      }
+ 173          /*
+ 174          模式2是时间设置界面
+ 175          */
+ 176          void mod2()
+ 177          {       uchar states=1;
+ 178   1              uchar keyval;
+ 179   1              LCD12864_Writechar(time.date,1,1);
+C51 COMPILER V9.01   MAIN                                                                  11/04/2022 20:44:02 PAGE 4   
+
+ 180   1              LCD12864_Writechar(time.times,2,2);
+ 181   1              LCD12864_Writechar("时间设置",0,2);
+ 182   1              while(1)
+ 183   1              {       keyval=Key();
+ 184   2                      if(ampm==1){
+ 185   3                              if (time.hour>12)
+ 186   3                              LCD12864_Writechar("PM",2,6);
+ 187   3                      else
+ 188   3                      LCD12864_Writechar("AM",2,6);}
+ 189   2                      else
+ 190   2              LCD12864_Writechar("  ",2,6);
+ 191   2                      LCD12864_Writechar("->",0,6);
+ 192   2                      LCD12864_Writestring(shijian,(states-1)*2,0,7);
+ 193   2                      if(keyval==2)
+ 194   2                      {       if (states>=7)
+ 195   3                                      states=1;
+ 196   3                              else states++;
+ 197   3                      }
+ 198   2                      else if(keyval==3 || keyval==4)
+ 199   2                      {       if(states==1)
+ 200   3                              {       if(keyval==3)
+ 201   4                                      time.sec++;
+ 202   4                                      else if (keyval==4)
+ 203   4                                      time.sec--;
+ 204   4                                      if(time.sec<0)
+ 205   4                                              time.sec=59;
+ 206   4                                      else if(time.sec>59)
+ 207   4                                              time.sec=0;
+ 208   4                                      turninto(&time,ampm);
+ 209   4                                      LCD12864_Writechar(time.times,2,2);
+ 210   4                              }
+ 211   3                              if(states==2)
+ 212   3                              {       if(keyval==3)
+ 213   4                                      time.min++;
+ 214   4                                      else if (keyval==4)
+ 215   4                                      time.min--;
+ 216   4                                      if(time.min<0)
+ 217   4                                              time.min=59;
+ 218   4                                      else if(time.min>59)
+ 219   4                                              time.min=0;
+ 220   4                                      turninto(&time,ampm);
+ 221   4                                      LCD12864_Writechar(time.times,2,2);
+ 222   4                              }
+ 223   3                              if(states==3)
+ 224   3                              {       if(keyval==3)
+ 225   4                                      time.hour++;
+ 226   4                                      else if (keyval==4)
+ 227   4                                      time.hour--;
+ 228   4                                      if(time.hour<0)
+ 229   4                                              time.hour=23;
+ 230   4                                      else if(time.hour>23)
+ 231   4                                              time.hour=0;
+ 232   4                                      turninto(&time,ampm);
+ 233   4                                      LCD12864_Writechar(time.times,2,2);
+ 234   4                              }
+ 235   3                              if(states==4)
+ 236   3                              {       if(keyval==3)
+ 237   4                                      time.day++;
+ 238   4                                      else if (keyval==4)
+ 239   4                                      time.day--;
+ 240   4                                      if(time.day<1)
+ 241   4                                              time.day=31;
+C51 COMPILER V9.01   MAIN                                                                  11/04/2022 20:44:02 PAGE 5   
+
+ 242   4                                      else if(time.day>31)
+ 243   4                                              time.day=1;
+ 244   4                                      turninto(&time,ampm);
+ 245   4                                      LCD12864_Writechar(time.date,1,1);
+ 246   4                              }
+ 247   3                              if(states==5)
+ 248   3                              {       if(keyval==3)
+ 249   4                                      time.mon++;
+ 250   4                                      else if (keyval==4)
+ 251   4                                      time.mon--;
+ 252   4                                      if(time.mon<1)
+ 253   4                                              time.mon=12;
+ 254   4                                      else if(time.mon>12)
+ 255   4                                              time.mon=1;
+ 256   4                                      turninto(&time,ampm);
+ 257   4                                      LCD12864_Writechar(time.date,1,1);
+ 258   4                              }
+ 259   3                              if(states==6)
+ 260   3                              {       if(keyval==3)
+ 261   4                                      time.year++;
+ 262   4                                      else if (keyval==4)
+ 263   4                                      time.year--;
+ 264   4                                      turninto(&time,ampm);
+ 265   4                                      LCD12864_Writechar(time.date,1,1);
+ 266   4                              }
+ 267   3                              if(states==7)
+ 268   3                              {       if(ampm==0)
+ 269   4                                              ampm=1;
+ 270   4                                      else
+ 271   4                                              ampm=0;
+ 272   4                              }
+ 273   3                      }
+ 274   2                      else if(keyval==1)
+ 275   2                      {       mod=5;
+ 276   3                              set_time((uchar *)&time);
+ 277   3                              LCD12864_WriteCmd(0x01);
+ 278   3                              break;
+ 279   3                      }
+ 280   2                      if(mod!=2)
+ 281   2                      {
+ 282   3                              LCD12864_WriteCmd(0x01);
+ 283   3                              break;  
+ 284   3                      }
+ 285   2              }       
+ 286   1      }
+ 287          void mod4()
+ 288          {       uchar keyval;
+ 289   1              Send(0x0a);
+ 290   1              Send(0x08);
+ 291   1              Send(0x00);
+ 292   1              Send(0x0c);
+ 293   1              Send(0x0a);
+ 294   1              Send(music);
+ 295   1              Send(0x0b);
+ 296   1              //led=0;
+ 297   1              if(huozai==1){
+ 298   2              sendData("F");
+ 299   2              huozai=0;}
+ 300   1              LCD12864_WriteCmd(0x01);
+ 301   1              sendData("FF");
+ 302   1              LCD12864_Writechar("火灾报警中",1,0);
+ 303   1              LCD12864_Writechar("按下任意键可取消",2,0);
+C51 COMPILER V9.01   MAIN                                                                  11/04/2022 20:44:02 PAGE 6   
+
+ 304   1              while(1)
+ 305   1              {       
+ 306   2                      if(keyval!=0)
+ 307   2                      {       mod=0;
+ 308   3                              huozai=0;
+ 309   3                              Send(0x13);
+ 310   3                              LCD12864_WriteCmd(0x01);
+ 311   3                              break;
+ 312   3                              }
+ 313   2                      if(mod==0)
+ 314   2                      {       clock=0;
+ 315   3                              huozai=0;
+ 316   3                              LCD12864_WriteCmd(0x01);
+ 317   3                              Send(0x13);
+ 318   3                              break;
+ 319   3                      }
+ 320   2              }
+ 321   1      }
+ 322          void mod6()
+ 323          {       uchar keyval;
+ 324   1              Send(0x0a);
+ 325   1              Send(0x08);
+ 326   1              Send(0x00);
+ 327   1              Send(0x0c);
+ 328   1              Send(0x0a);
+ 329   1              Send(2);
+ 330   1              Send(0x0b);
+ 331   1              //led=0;
+ 332   1              LCD12864_WriteCmd(0x01);
+ 333   1              LCD12864_Writechar("时间到了",0,2);
+ 334   1              LCD12864_Writechar("闹钟闹钟",1,2);
+ 335   1              LCD12864_Writechar("按任意键取消",2,1);
+ 336   1              while(1)
+ 337   1              {       keyval=0;
+ 338   2                      if(keyval!=0)
+ 339   2                      {       mod=0;
+ 340   3                              clock=0;
+ 341   3                              Send(0x13);
+ 342   3                              LCD12864_WriteCmd(0x01);
+ 343   3                              break;
+ 344   3                              }
+ 345   2                      if(mod==0)
+ 346   2                      {       clock=0;
+ 347   3                              huozai=0;
+ 348   3                              LCD12864_WriteCmd(0x01);
+ 349   3                              Send(0x13);
+ 350   3                              break;
+ 351   3                      }
+ 352   2              }
+ 353   1      }
+ 354          void mod3()
+ 355          {       uchar keyval;
+ 356   1      
+ 357   1              while(1)
+ 358   1              {       keyval=Key();
+ 359   2                      LCD12864_Writechar("今日天气",0,2);
+ 360   2                      LCD12864_Writechar(weatherdata,1,1);
+ 361   2                      LCD12864_Writechar("天气在线获取",2,1);
+ 362   2                      if(keyval==1)
+ 363   2                      {       mod=5;
+ 364   3                              LCD12864_WriteCmd(0x01);
+ 365   3                              break;  
+C51 COMPILER V9.01   MAIN                                                                  11/04/2022 20:44:02 PAGE 7   
+
+ 366   3                      }
+ 367   2               if(mod!=3)
+ 368   2               {      LCD12864_WriteCmd(0x01);
+ 369   3                      break;
+ 370   3               }
+ 371   2              }
+ 372   1      }
+ 373          void modset()
+ 374          {       uchar state=0;
+ 375   1              uchar keyval=0;
+ 376   1              LCD12864_Writechar("1.主界面",0,0);
+ 377   1              LCD12864_Writechar("2.闹钟设置",1,0);
+ 378   1              LCD12864_Writechar("3.时间设置",2,0);
+ 379   1              LCD12864_Writechar("4.天气获取",3,0);
+ 380   1              while(1)
+ 381   1              {       keyval=Key();
+ 382   2                      LCD12864_Writechar("<-",state,6);
+ 383   2                      if(keyval==1)
+ 384   2                      {       LCD12864_Writechar("  ",state,6);
+ 385   3                              state++;
+ 386   3                              if(state>=4)
+ 387   3                                      state=0;
+ 388   3                      }
+ 389   2                      if(keyval==2)
+ 390   2                      {       LCD12864_WriteCmd(0x01);
+ 391   3                              mod=state;
+ 392   3                              break;
+ 393   3                      }       
+ 394   2              }
+ 395   1      }
+ 396          /*蓝牙配置*/
+ 397          void UsartInit()
+ 398          {
+ 399   1              SCON=0X50;                      //设置为工作方式1
+ 400   1              TMOD=0X20;                      //设置计数器工作方式2
+ 401   1              PCON=0X00;                      //波特率加倍
+ 402   1              TH1=0XFD;                               //计数器初始值设置，注意波特率是4800的
+ 403   1              TL1=0XFD;
+ 404   1              ES=1;                                           //打开接收中断
+ 405   1              EA=1;                                           //打开总中断
+ 406   1              TR1=1;                                  //打开计数器
+ 407   1      }
+ 408          /*蓝牙数据发送*/
+ 409          void sendData(uchar *datas)
+ 410          {       uchar i=0;
+ 411   1              while(datas[i]!='\0')
+ 412   1          {   SBUF=datas[i];            //接收到的数据放入发送缓存器发送
+ 413   2              while(!TI);       //等待发送数据完成
+ 414   2              TI=0;
+ 415   2                      i++;}                     //清除发送完成标志位
+ 416   1      }
+ 417          
+ 418          void ser_int (void) interrupt 4   
+ 419          {        
+ 420   1          if(RI == 1) {  //如果收到.  
+ 421   2            RI = 0;      //清除标志.  
+ 422   2            UART_buff = SBUF;  //接收.
+ 423   2                if (UART_buff>=0&&UART_buff<=2)
+ 424   2               { mod=UART_buff;
+ 425   3               }
+ 426   2               else if(UART_buff==3)
+ 427   2               {      if(ampm==1)
+C51 COMPILER V9.01   MAIN                                                                  11/04/2022 20:44:02 PAGE 8   
+
+ 428   3                              ampm=0;
+ 429   3                      else
+ 430   3                              ampm=1;
+ 431   3               }
+ 432   2               else if(UART_buff>=4&&UART_buff<=15){
+ 433   3               if(UART_buff==4) 
+ 434   3                      time.hour++;
+ 435   3              else if(UART_buff==5)
+ 436   3                      time.hour--;
+ 437   3              else if(UART_buff==6)
+ 438   3                      time.min++;
+ 439   3              else if(UART_buff==7)
+ 440   3                      time.min--;
+ 441   3              else if(UART_buff==8)
+ 442   3                      time.sec++;
+ 443   3              else if(UART_buff==9)
+ 444   3                      time.sec--;
+ 445   3              else if(UART_buff==10)
+ 446   3                      time.year++;
+ 447   3              else if(UART_buff==11)
+ 448   3                      time.year--;
+ 449   3              else if(UART_buff==12)
+ 450   3                      time.mon++;
+ 451   3              else if(UART_buff==13)
+ 452   3                      time.mon--;
+ 453   3              else if(UART_buff==14)
+ 454   3                      time.day++;
+ 455   3              else if(UART_buff==15)
+ 456   3                      time.day--;
+ 457   3              set_time((uchar *)&time);
+ 458   3                      }
+ 459   2              else if(UART_buff>=16&&UART_buff<=20)
+ 460   2              {tianqi=UART_buff%16;}
+ 461   2              else if(UART_buff>=21&&UART_buff<=27)
+ 462   2              {       if(UART_buff==21)
+ 463   3                              alarm.hour++;
+ 464   3                      else if(UART_buff==22)
+ 465   3                              alarm.hour--;
+ 466   3                      else if(UART_buff==23)
+ 467   3                              alarm.min++;
+ 468   3                      else if(UART_buff==24)
+ 469   3                              alarm.min--;
+ 470   3                      else if(UART_buff==25)
+ 471   3                      {       if(clock==1)
+ 472   4                                      clock=0;
+ 473   4                              else
+ 474   4                                      clock=1;        
+ 475   4                              }
+ 476   3                      else if(UART_buff==26)
+ 477   3                              music=1;
+ 478   3                      else if(UART_buff==27)
+ 479   3                              music=2;
+ 480   3      
+ 481   3              }
+ 482   2              else if(UART_buff==28)
+ 483   2              {       Send(0x0a);
+ 484   3                      Send(0x02);
+ 485   3                      Send(0x00);
+ 486   3                      Send(0x0c);
+ 487   3                      Send(0x0a);
+ 488   3                      Send(1);
+ 489   3                      Send(0x0b);     
+C51 COMPILER V9.01   MAIN                                                                  11/04/2022 20:44:02 PAGE 9   
+
+ 490   3              }
+ 491   2              else if(UART_buff==29)
+ 492   2              {       count=0;
+ 493   3      
+ 494   3              }
+ 495   2              else
+ 496   2              {       if (UART_buff!='\0')
+ 497   3                      {       weatherdata[count+1]=UART_buff;
+ 498   4                              count++;}       
+ 499   3              }       
+ 500   2          }  
+ 501   1        
+ 502   1      }
+ 503          
+ 504             
+ 505          main()
+ 506          {       UsartInit();
+ 507   1              Ds1302Init();
+ 508   1              LCD12864_Init();
+ 509   1              getdata((uchar *)&sensor);
+ 510   1              read_time((uchar *)&time);
+ 511   1              
+ 512   1              while(1)
+ 513   1      {               /*if(mod==1)
+ 514   2                              {mod1();
+ 515   2                               
+ 516   2                              }
+ 517   2                      else if(mod==0)
+ 518   2                              {mod0();
+ 519   2                              }
+ 520   2                      else if(mod==2)
+ 521   2                              {mod2();}
+ 522   2                      else if(mod==3)
+ 523   2                              {mod3();
+ 524   2                              }
+ 525   2                      else if(mod==4)
+ 526   2                      mod4(); 
+ 527   2                      else if(mod==5)
+ 528   2                      modset();
+ 529   2                      else
+ 530   2                      mod6();*/
+ 531   2              LCD12864_Writechar("开",0,7);
+ 532   2      }}
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2700    ----
+   CONSTANT SIZE    =    199    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =     79      12
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
